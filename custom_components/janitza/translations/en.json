@@ -302,5 +302,19 @@
     "no_component_answered": {
       "message": "No component answered."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling",
+        "description": "How often Home Assistant reads the meter's measurements. A longer interval puts less load on the meter and on a shared Modbus link.",
+        "data": {
+          "scan_interval": "Poll interval"
+        },
+        "data_description": {
+          "scan_interval": "Seconds between two reads of the measurements. The default is 10."
+        }
+      }
+    }
   }
 }

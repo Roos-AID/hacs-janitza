@@ -5,8 +5,21 @@ from typing import TYPE_CHECKING, Any, override
 
 import probatio
 from homeassistant.components.modbus import async_get_temporary_unit
-from homeassistant.config_entries import ConfigEntryState, ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PORT, CONF_TYPE
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigEntryState,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
+from homeassistant.const import (
+    CONF_DEVICE,
+    CONF_HOST,
+    CONF_PORT,
+    CONF_SCAN_INTERVAL,
+    CONF_TYPE,
+)
+from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.selector import (
     NumberSelector,
@@ -25,9 +38,12 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_UNIT_ID,
     DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
     MODEL_NAMES,
     MODEL_UMG96RM,
     MODEL_UMG508,
+    SCAN_INTERVAL,
     TYPE_SERIAL,
     TYPE_TCP,
 )
@@ -51,6 +67,22 @@ STEP_RECONFIGURE_TCP = "reconfigure_tcp"
 UNIT_ID_SELECTOR = probatio.All(
     NumberSelector(NumberSelectorConfig(mode=NumberSelectorMode.BOX, min=1, max=247)),
     probatio.Coerce(int),
+)
+
+OPTIONS_SCHEMA = probatio.Schema(
+    {
+        probatio.Required(CONF_SCAN_INTERVAL, default=SCAN_INTERVAL): probatio.All(
+            NumberSelector(
+                NumberSelectorConfig(
+                    mode=NumberSelectorMode.BOX,
+                    min=MIN_SCAN_INTERVAL,
+                    max=MAX_SCAN_INTERVAL,
+                    unit_of_measurement="s",
+                )
+            ),
+            probatio.Coerce(int),
+        ),
+    }
 )
 
 STEP_TCP_DATA_SCHEMA = probatio.Schema(
@@ -93,6 +125,14 @@ class JanitzaConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     _model: str = MODEL_UMG96RM
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,  # noqa: ARG004 - the hook signature
+    ) -> JanitzaOptionsFlow:
+        """Return the options flow: the poll interval."""
+        return JanitzaOptionsFlow()
 
     @override
     async def async_step_user(
@@ -274,3 +314,20 @@ class JanitzaConfigFlow(ConfigFlow, domain=DOMAIN):
             return None, {"base": error}, {}
 
         return device, {}, {}
+
+
+class JanitzaOptionsFlow(OptionsFlowWithReload):
+    """Let the user set how often the meter's measurements are polled."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show or store the poll interval; the entry reloads to apply it."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                OPTIONS_SCHEMA, self.config_entry.options
+            ),
+        )

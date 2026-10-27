@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.components.modbus import async_get_unit
-from homeassistant.const import Platform
+from homeassistant.const import CONF_SCAN_INTERVAL, Platform
 
 from .const import CONF_UNIT_ID, SCAN_INTERVAL, SETTINGS_SCAN_INTERVAL
 from .coordinator import (
@@ -38,7 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: JanitzaConfigEntry) -> b
         entry,
         device,
         device.async_update_readings,
-        timedelta(seconds=SCAN_INTERVAL),
+        timedelta(seconds=entry.options.get(CONF_SCAN_INTERVAL, SCAN_INTERVAL)),
     )
     # A model with nothing configurable to read has no settings to poll.
     settings = (

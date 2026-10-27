@@ -6,8 +6,9 @@ from unittest.mock import MagicMock
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import CONF_SCAN_INTERVAL, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from modbus_connection import (
     IllegalDataAddressError,
@@ -218,3 +219,38 @@ async def test_a_refused_block_marks_only_its_own_entities_unavailable(
 
     assert hass.states.get(CT_ENTITY).state == "100.0"
     assert hass.states.get(POWER_ENTITY).state == STATE_UNAVAILABLE
+
+
+async def test_options_set_the_poll_interval(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    mock_connection: MockModbusConnection,
+    init_integration: MockConfigEntry,
+) -> None:
+    """Test the options flow stores the interval and the entry polls at it."""
+    result = await hass.config_entries.options.async_init(init_integration.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SCAN_INTERVAL: 60}
+    )
+    await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert init_integration.options == {CONF_SCAN_INTERVAL: 60}
+    assert init_integration.state is ConfigEntryState.LOADED
+    assert init_integration.runtime_data.readings.update_interval == timedelta(
+        seconds=60
+    )
+
+    unit = mock_connection.for_unit(1)
+    reads = len(unit.read_events)
+    freezer.tick(timedelta(seconds=SCAN_INTERVAL))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert len(unit.read_events) == reads  # the old 10 s no longer polls
+
+    freezer.tick(timedelta(seconds=60 - SCAN_INTERVAL))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert len(unit.read_events) > reads

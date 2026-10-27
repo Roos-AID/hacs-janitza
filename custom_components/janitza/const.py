@@ -19,6 +19,9 @@ DEFAULT_BAUDRATE = 115200
 DEFAULT_PORT = 502
 DEFAULT_UNIT_ID = 1
 SCAN_INTERVAL = 10
+# Bounds of the poll interval the options let a user pick, in seconds.
+MIN_SCAN_INTERVAL = 1
+MAX_SCAN_INTERVAL = 3600
 SETTINGS_SCAN_INTERVAL = 300
 
 CONF_BAUDRATE = "baudrate"
