@@ -5,6 +5,8 @@ from .device import (
     MEASUREMENTS,
     READINGS_COMPONENTS,
     SETTINGS_COMPONENTS,
+    UMG508_READINGS_COMPONENTS,
+    UMG508_SETTINGS_COMPONENTS,
     JanitzaDevice,
     JanitzaMeter,
     Umg508,
@@ -15,12 +17,15 @@ from .identity import Identity
 from .measurements import Current, Grid, Harmonics, Power, Voltage
 from .model import JanitzaComponent, UpdateReport
 from .transformers import Transformers
+from .umg508 import TariffEnergy, Umg508Identity, Umg508Transformers
 
 __all__ = [
     "MEASUREMENTS",
     "MEASUREMENT_COMPONENTS",
     "READINGS_COMPONENTS",
     "SETTINGS_COMPONENTS",
+    "UMG508_READINGS_COMPONENTS",
+    "UMG508_SETTINGS_COMPONENTS",
     "Current",
     "Energy",
     "Grid",
@@ -32,8 +37,11 @@ __all__ = [
     "ModuleType",
     "Power",
     "RotationField",
+    "TariffEnergy",
     "Transformers",
     "Umg508",
+    "Umg508Identity",
+    "Umg508Transformers",
     "UpdateReport",
     "Voltage",
 ]

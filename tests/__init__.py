@@ -1,7 +1,9 @@
 """Tests for the Janitza integration."""
 
+import json
 import math
 import struct
+from pathlib import Path
 
 from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PORT, CONF_TYPE
 from modbus_connection.mock import MockModbusUnit
@@ -165,7 +167,18 @@ def seed_meter(unit: MockModbusUnit, serial: str = MOCK_SERIAL) -> None:
         unit.holding[address] = float_words(value)
 
 
+# Registers a real UMG 508 (firmware 5.030) returned outside the 19000 block:
+# tariff energy, CT/VT ratios, firmware and a stand-in serial number.
+UMG508_REAL = Path(__file__).parent / "fixtures" / "umg508_real.json"
+MOCK_508_SERIAL = "21012345"
+MOCK_508_RELEASE = "5.030"
+UMG508_TARIFF_REGISTER = 9929
+
+
 def seed_umg508(unit: MockModbusUnit) -> None:
-    """Seed a UMG 508: the measurement block, and nothing else."""
+    """Seed a UMG 508: the shared measurements, then its own blocks as read."""
+    for address, word in json.loads(UMG508_REAL.read_text())["holding"].items():
+        if int(address) < 19000 or int(address) >= 19122:
+            unit.holding[int(address)] = word
     for address in range(19000, 19122, 2):
         unit.holding[address] = float_words(MEASUREMENTS.get(address, math.nan))

@@ -55,9 +55,9 @@ class JanitzaDataUpdateCoordinator(DataUpdateCoordinator[UpdateReport]):
             manufacturer=ATTR_MANUFACTURER,
             model=self.device.model_name,
         )
-        # A stand-in identifier is not a serial number; only a real one is shown.
-        if self.device.has_serial_number:
-            info["serial_number"] = self.device.serial_number
+        # The serial the meter reports, not a stand-in identifier.
+        if (serial := self.device.reported_serial_number) is not None:
+            info["serial_number"] = serial
         if (release := self.device.software_release) is not None:
             info["sw_version"] = str(release)
         return info

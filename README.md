@@ -65,11 +65,15 @@ integration reads its serial number to identify it.
   port) plus unit ID. Moving the meter to another IP address with
   **Reconfigure** keeps its entities and history; adding it again as a new
   entry does not.
-- The UMG 508 gets the same measurement sensors as the UMG 96RM (61 in
-  all). There are no CT/VT ratio, firmware or all-tariff energy sensors for
-  it: on a real UMG 508, the UMG 509-PRO addresses for those returned
-  unrelated values, and no UMG 508 Modbus address list was available to map
-  them correctly.
+- Beyond the shared measurement sensors, the UMG 508 gets **Energy
+  consumed (all tariffs)** and **Energy delivered (all tariffs)**, its CT and
+  VT ratios (diagnostic, disabled by default), and its serial number and
+  firmware release on the device page. No UMG 508 Modbus address list was
+  available: these addresses (9929-9944, 10131-10162 and 19900-19917) were
+  found on a real UMG 508 with firmware 5.030, by matching what it returned
+  against its display. A UMG 508 answers a read that starts in the middle of
+  a value with meaningless data, so each block is read from an address that
+  meter answered correctly.
 
 The connection details of either model can be changed later with
 **Reconfigure**.
@@ -86,17 +90,21 @@ energy, and phase rotation.
 Disabled by default, and can be enabled from the device page: line-to-line
 voltages, neutral current, apparent and reactive power, power factor,
 per-phase energy, apparent and reactive energy, THD of voltage and current,
-and, on the UMG 96RM only, the configured CT and VT ratios.
+and the configured CT and VT ratios.
 
 For the energy dashboard use **Energy consumed** as grid consumption and
 **Energy delivered** as return to grid. Active power is positive while
 consuming and negative while delivering, as the current transformers are
-wired. Janitza's address list labels the total consumed counter (register
-19068) as "rate 1"; if you have set up tariff switching on the meter, compare
-it with the meter's display before relying on it.
+wired. **Energy consumed** is the counter from the "frequently required
+readings" (register 19068), which Janitza labels as tariff 1 only. On a UMG
+508, use **Energy consumed (all tariffs)** and **Energy delivered (all
+tariffs)** in the energy dashboard instead: they keep counting when the meter
+switches to tariff 2.
 
-Measurements refresh every 10 seconds (two Modbus requests), the UMG 96RM's
-transformer ratios every 5 minutes. The integration is read-only.
+Measurements refresh every 10 seconds by default (two Modbus requests, three
+on a UMG 508); set another interval under **Configure** on the integration.
+The transformer ratios are read every 5 minutes. The integration is
+read-only.
 
 ## Reporting a problem
 

@@ -40,17 +40,22 @@ from custom_components.janitza.const import (
 from . import (
     MOCK_508_ENTRY_DATA,
     MOCK_508_IDENTIFIER,
+    MOCK_508_RELEASE,
+    MOCK_508_SERIAL,
     MOCK_508_SERIAL_ENTRY_DATA,
     MOCK_508_SERIAL_IDENTIFIER,
     MOCK_508_SERIAL_INPUT,
     MOCK_508_TCP_INPUT,
     MOCK_508_TITLE,
+    UMG508_TARIFF_REGISTER,
     seed_umg508,
 )
 
 POWER_ENTITY = "sensor.umg_508_active_power"
 CONSUMED_ENTITY = "sensor.umg_508_energy_consumed"
 DELIVERED_ENTITY = "sensor.umg_508_energy_delivered"
+ALL_TARIFFS_CONSUMED_ENTITY = "sensor.umg_508_energy_consumed_all_tariffs"
+ALL_TARIFFS_DELIVERED_ENTITY = "sensor.umg_508_energy_delivered_all_tariffs"
 
 
 def _patch_temporary_unit(connection: MockModbusConnection):  # noqa: ANN202
@@ -199,12 +204,18 @@ async def test_508_setup(
     device_registry: dr.DeviceRegistry,
     init_integration_508: MockConfigEntry,
 ) -> None:
-    """Test a UMG 508 sets up with readings only and no serial number."""
+    """Test a UMG 508 sets up with its own blocks and reports its serial."""
     assert init_integration_508.state is ConfigEntryState.LOADED
-    assert init_integration_508.runtime_data.settings is None
+    assert init_integration_508.runtime_data.settings is not None
     assert hass.states.get(POWER_ENTITY).state == "1550.0"
     assert hass.states.get(CONSUMED_ENTITY).state == "3600.0"
     assert hass.states.get(DELIVERED_ENTITY).state == "1100.0"
+    assert float(hass.states.get(ALL_TARIFFS_CONSUMED_ENTITY).state) == pytest.approx(
+        11.9858, abs=1e-3
+    )
+    assert float(hass.states.get(ALL_TARIFFS_DELIVERED_ENTITY).state) == pytest.approx(
+        14.26006, abs=1e-4
+    )
 
     device = device_registry.async_get_device_by_identifier(
         (DOMAIN, MOCK_508_IDENTIFIER), init_integration_508.entry_id
@@ -212,8 +223,9 @@ async def test_508_setup(
     assert device is not None
     assert device.model == "UMG 508"
     assert device.manufacturer == "Janitza"
-    assert device.serial_number is None
-    assert device.sw_version is None
+    # Known by its link, but showing the serial number it reports.
+    assert device.serial_number == MOCK_508_SERIAL
+    assert device.sw_version == MOCK_508_RELEASE
 
     await hass.config_entries.async_unload(init_integration_508.entry_id)
     assert init_integration_508.state is ConfigEntryState.NOT_LOADED
@@ -227,7 +239,7 @@ async def test_508_entities(
     mock_config_entry_508: MockConfigEntry,
     mock_get_unit_508: MagicMock,
 ) -> None:
-    """Test a UMG 508 gets every measurement sensor and no transformer sensors."""
+    """Test a UMG 508 gets the shared sensors, its own and its CT/VT ratios."""
     mock_config_entry_508.add_to_hass(hass)
     with patch("custom_components.janitza.PLATFORMS", [Platform.SENSOR]):
         await hass.config_entries.async_setup(mock_config_entry_508.entry_id)
@@ -239,8 +251,9 @@ async def test_508_entities(
     keys = {
         entry.unique_id.removeprefix(f"{MOCK_508_IDENTIFIER}_") for entry in entries
     }
-    assert not any(key.startswith(("ct_", "vt_")) for key in keys)
-    assert len(entries) == 61
+    assert sum(key.startswith(("ct_", "vt_")) for key in keys) == 12
+    assert "active_energy_consumed_all_tariffs" in keys
+    assert len(entries) == 75
     await snapshot_platform(
         hass, entity_registry, snapshot, mock_config_entry_508.entry_id
     )
@@ -256,9 +269,36 @@ async def test_508_diagnostics(
         hass, hass_client, init_integration_508
     )
     assert diag["model"] == "UMG 508"
-    assert diag["identity"] is None
-    assert diag["software_release"] is None
-    assert diag["settings"] is None
-    assert diag["readings"] == {"updated": ["measurements"], "failed": {}}
+    assert diag["software_release"] == MOCK_508_RELEASE
+    assert diag["identity"] == {
+        "software_release": MOCK_508_RELEASE,
+        "reported_serial_number": "**REDACTED**",
+    }
+    assert diag["settings"] == {"updated": ["transformers"], "failed": {}}
+    assert diag["readings"] == {
+        "updated": ["measurements", "tariff_energy"],
+        "failed": {},
+    }
     holding = diag["raw"]["holding"]
-    assert min(int(address) for address in holding) == 19000
+    for address in ("9929", "10131", "19900", "19000"):
+        assert address in holding
+    assert "19916" not in holding
+
+
+async def test_508_refused_tariff_block(
+    hass: HomeAssistant,
+    mock_connection_508: MockModbusConnection,
+    mock_config_entry_508: MockConfigEntry,
+    mock_get_unit_508: MagicMock,
+) -> None:
+    """Test a 508 refusing the tariff block loses only those sensors."""
+    mock_connection_508.for_unit(1).fail_read(
+        UMG508_TARIFF_REGISTER, IllegalDataAddressError()
+    )
+    mock_config_entry_508.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry_508.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry_508.state is ConfigEntryState.LOADED
+    assert hass.states.get(POWER_ENTITY).state == "1550.0"
+    assert hass.states.get(ALL_TARIFFS_CONSUMED_ENTITY).state == "unavailable"

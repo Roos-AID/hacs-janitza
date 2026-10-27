@@ -161,4 +161,6 @@ def test_totals_are_the_counters() -> None:
             SensorStateClass.TOTAL,
             SensorStateClass.TOTAL_INCREASING,
         )
-        assert is_total == (description.component == "energy"), description.key
+        assert is_total == (description.component in {"energy", "tariff_energy"}), (
+            description.key
+        )

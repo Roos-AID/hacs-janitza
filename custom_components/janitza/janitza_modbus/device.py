@@ -14,6 +14,12 @@ from .identity import PRODUCTION_NUMBER_REGISTERS, SERIAL_NUMBER_REGISTERS, Iden
 from .measurements import Current, Grid, Harmonics, Power, Voltage
 from .model import UpdateReport
 from .transformers import Transformers
+from .umg508 import (
+    UMG508_SERIAL_NUMBER_REGISTERS,
+    TariffEnergy,
+    Umg508Identity,
+    Umg508Transformers,
+)
 
 if TYPE_CHECKING:
     from modbus_connection import ModbusUnit
@@ -84,6 +90,11 @@ class JanitzaDevice(Device):
     def unrecognized(self) -> bool:
         """Whether the device answered without anything to tell it by."""
         return False
+
+    @property
+    def reported_serial_number(self) -> str | None:
+        """The serial number the meter itself reports, where it reports one."""
+        return self.serial_number if self.has_serial_number else None
 
     @staticmethod
     def report_name(component: str) -> str:
@@ -238,24 +249,30 @@ class JanitzaMeter(JanitzaDevice):
         return raw
 
 
+# What a UMG 508 polls beyond the shared block, by attribute name.
+UMG508_READINGS_COMPONENTS = (MEASUREMENTS, "tariff_energy")
+UMG508_SETTINGS_COMPONENTS = ("transformers",)
+
+
 class Umg508(JanitzaDevice):
     """A UMG 508 reached through a ``ModbusUnit``, over Ethernet or RS-485.
 
     The UMG 508 serves the same "frequently required readings" block as the
-    UMG 96RM, so it reads the same measurements, and nothing else: its other
-    address sections are laid out differently from the UMG 509-PRO's, which
-    a real meter showed (registers 13949-14008, 14176-14207 and 17435 there
-    answer with unrelated values), and no UMG 508 Modbus list was at hand to
-    map them from.
+    UMG 96RM, so it reads the same measurements. Beyond that it reads, each
+    as a block of its own, the active energy over every tariff
+    (``tariff_energy``), its transformer ratios (``transformers``) and its
+    firmware release and serial number (``identity``), at addresses found on
+    a real meter (see ``umg508``).
 
-    It reports no serial number, so the caller names the meter:
-    ``serial_number`` is whatever stable identifier the caller keeps it under
-    (the Home Assistant integration uses its link and unit id), not a number
-    read from the meter.
+    ``serial_number`` is whatever stable identifier the caller keeps the
+    meter under (the Home Assistant integration uses its link and unit id);
+    the serial number the meter reports is ``reported_serial_number``.
     """
 
     model_name = "UMG 508"
     has_serial_number = False
+    readings_components = UMG508_READINGS_COMPONENTS
+    settings_components = UMG508_SETTINGS_COMPONENTS
 
     def __init__(
         self,
@@ -265,6 +282,9 @@ class Umg508(JanitzaDevice):
         timeout: float | None = None,
     ) -> None:
         super().__init__(unit, serial_number=serial_number, timeout=timeout)
+        self.tariff_energy = TariffEnergy(unit)
+        self.transformers = Umg508Transformers(unit)
+        self.identity = Umg508Identity(unit)
         self._answered = True
 
     @classmethod
@@ -295,3 +315,52 @@ class Umg508(JanitzaDevice):
     def unrecognized(self) -> bool:
         """Whether the device refused the measurement block when detected."""
         return not self._answered
+
+    @property
+    def software_release(self) -> str | None:
+        """The firmware release as Janitza writes it, such as ``5.030``."""
+        release = self.identity.software_release
+        if not release:
+            return None
+        return f"{release // 1000}.{release % 1000:03d}"
+
+    @property
+    def reported_serial_number(self) -> str | None:
+        """The serial number the meter reports, once its identity was read."""
+        serial = self.identity.serial_number
+        return str(serial) if serial else None
+
+    async def async_read_identity(self) -> bool:
+        """Read the firmware release and serial, with a few tries.
+
+        Returns whether it read. A meter that keeps refusing gets a warning
+        instead of an error: nothing a poll reads depends on it.
+        """
+        for attempt in range(_IDENTITY_ATTEMPTS):
+            try:
+                await self.identity.async_update()
+            except ModbusError as err:
+                if attempt == _IDENTITY_ATTEMPTS - 1:
+                    _LOGGER.warning(
+                        "UMG 508 %s: could not read its identity: %s",
+                        self.serial_number,
+                        err,
+                    )
+            else:
+                return True
+        return False
+
+    async def async_read_raw(
+        self,
+        names: Iterable[str] | None = None,
+        *,
+        redact_serial: bool = False,
+    ) -> Raw:
+        """Every register this meter reads, undecoded, for diagnostics."""
+        if names is None:
+            names = ("identity", *self.readings_components, *self.settings_components)
+        raw = await super().async_read_raw(names)
+        if redact_serial and (holding := raw.get("holding")) is not None:
+            for address in UMG508_SERIAL_NUMBER_REGISTERS:
+                holding.pop(address, None)
+        return raw
