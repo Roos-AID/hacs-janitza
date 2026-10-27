@@ -81,9 +81,6 @@
   },
   "entity": {
     "sensor": {
-      "active_energy_consumed_all_tariffs": {
-        "name": "Energy consumed (all tariffs)"
-      },
       "active_energy_consumed_l1": {
         "name": "Energy consumed L1"
       },
@@ -95,9 +92,6 @@
       },
       "active_energy_consumed_total": {
         "name": "Energy consumed"
-      },
-      "active_energy_delivered_all_tariffs": {
-        "name": "Energy delivered (all tariffs)"
       },
       "active_energy_delivered_l1": {
         "name": "Energy delivered L1"
@@ -134,9 +128,6 @@
       },
       "active_power_total": {
         "name": "Active power"
-      },
-      "active_tariff": {
-        "name": "Active tariff"
       },
       "apparent_energy_l1": {
         "name": "Apparent energy L1"

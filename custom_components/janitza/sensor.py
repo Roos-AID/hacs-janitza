@@ -402,39 +402,6 @@ SENSOR_DESCRIPTIONS: tuple[JanitzaSensorDescription, ...] = (
         suggested_display_precision=2,
         value_fn=lambda device: device.energy.active_energy_consumed_total,
     ),
-    # UMG 508 only: active energy over every tariff, and the tariff running.
-    JanitzaSensorDescription(
-        key="active_energy_consumed_all_tariffs",
-        component="tariff_energy",
-        translation_key="active_energy_consumed_all_tariffs",
-        device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=UnitOfEnergy.WATT_HOUR,
-        suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-        suggested_display_precision=2,
-        value_fn=lambda device: device.tariff_energy.active_energy_consumed_all_tariffs,
-    ),
-    JanitzaSensorDescription(
-        key="active_energy_delivered_all_tariffs",
-        component="tariff_energy",
-        translation_key="active_energy_delivered_all_tariffs",
-        device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=UnitOfEnergy.WATT_HOUR,
-        suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-        suggested_display_precision=2,
-        value_fn=lambda device: (
-            device.tariff_energy.active_energy_delivered_all_tariffs
-        ),
-    ),
-    JanitzaSensorDescription(
-        key="active_tariff",
-        component="tariff_energy",
-        translation_key="active_tariff",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-        value_fn=lambda device: device.tariff_energy.active_tariff,
-    ),
     JanitzaSensorDescription(
         key="active_energy_delivered_total",
         component="energy",

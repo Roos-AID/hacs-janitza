@@ -1,9 +1,6 @@
 {
   "entity": {
     "sensor": {
-      "active_tariff": {
-        "default": "mdi:cash-clock"
-      },
       "apparent_energy_l1": {
         "default": "mdi:lightning-bolt-outline"
       },

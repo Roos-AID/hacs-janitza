@@ -165,32 +165,7 @@ def seed_meter(unit: MockModbusUnit, serial: str = MOCK_SERIAL) -> None:
         unit.holding[address] = float_words(value)
 
 
-MOCK_508_RELEASE = "2.103"
-UMG508_TARIFF_REGISTER = 13949
-UMG508_TRANSFORMERS_REGISTER = 14176
-
-# Both tariffs together: more than tariff 1 alone (19068).
-UMG508_TARIFF_ENERGY: dict[int, float] = {
-    13995: 4_100_000.0,
-    14007: 1_100_000.0,
-}
-UMG508_TRANSFORMERS: dict[int, float] = {
-    **dict.fromkeys((14176, 14178, 14180), 150.0),
-    **dict.fromkeys((14184, 14186, 14188), 5.0),
-    **dict.fromkeys((14192, 14194, 14196, 14200, 14202, 14204), 400.0),
-}
-
-
 def seed_umg508(unit: MockModbusUnit) -> None:
-    """Seed a UMG 508: measurements, tariff energy, ratios and firmware."""
+    """Seed a UMG 508: the measurement block, and nothing else."""
     for address in range(19000, 19122, 2):
         unit.holding[address] = float_words(MEASUREMENTS.get(address, math.nan))
-    unit.holding[13949] = [2, 2]
-    for address in range(13951, 14009, 2):
-        unit.holding[address] = float_words(UMG508_TARIFF_ENERGY.get(address, math.nan))
-    for address in range(14176, 14208, 2):
-        unit.holding[address] = float_words(UMG508_TRANSFORMERS.get(address, math.nan))
-    data = MOCK_508_RELEASE.encode().ljust(16, b"\0")
-    unit.holding[17435] = [
-        int.from_bytes(data[i : i + 2], "big") for i in range(0, 16, 2)
-    ]
