@@ -1,9 +1,6 @@
 {
   "domain": "janitza",
   "name": "Janitza",
-  "categories": [
-    "energy.meters_monitoring"
-  ],
   "codeowners": [
     "@Roos-AID"
   ],

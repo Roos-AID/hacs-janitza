@@ -110,7 +110,7 @@ async def _start_508_flow(hass: HomeAssistant, connection_type: str) -> str:
         ),
     ],
 )
-async def test_flow_creates_a_508_entry(  # noqa: PLR0917 - parametrized
+async def test_flow_creates_a_508_entry(
     hass: HomeAssistant,
     mock_setup_entry: AsyncMock,
     connection_type: str,
