@@ -7,6 +7,8 @@ import pytest
 from homeassistant.core import HomeAssistant
 from modbus_connection.mock import MockModbusConnection
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
+from syrupy.assertion import SnapshotAssertion
 
 from custom_components.janitza.const import DOMAIN
 
@@ -25,6 +27,18 @@ from . import (
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Load the integration from custom_components in every test."""
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """
+    Use Home Assistant's snapshot format and location (tests/snapshots).
+
+    The pytest plugins of syrupy and pytest-homeassistant-custom-component
+    both provide this fixture, and which one wins depends on the order they
+    load in. Defining it here makes the choice independent of that order.
+    """
+    return snapshot.use_extension(HomeAssistantSnapshotExtension)
 
 
 @pytest.fixture
