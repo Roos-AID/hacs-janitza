@@ -1,5 +1,5 @@
 {
-    "name": "OWNER/hacs-janitza",
+    "name": "Roos-AID/hacs-janitza",
     "image": "mcr.microsoft.com/devcontainers/base:debian",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [

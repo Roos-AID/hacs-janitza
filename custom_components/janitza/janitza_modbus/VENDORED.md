@@ -1,7 +1,7 @@
 # Vendored: janitza-modbus
 
 This directory is an unmodified copy of the `janitza_modbus` package from
-[janitza-modbus](https://github.com/OWNER/janitza-modbus), Apache-2.0
+[janitza-modbus](https://github.com/Roos-AID/janitza-modbus), Apache-2.0
 (see `LICENSE`), so the integration can be installed through HACS before the
 library is on PyPI.
 

@@ -28,7 +28,7 @@ integration: it uses the Modbus libraries Home Assistant already ships.
 ### HACS
 
 1. In HACS, open the menu in the top right and choose **Custom repositories**.
-2. Add `https://github.com/OWNER/hacs-janitza` with type **Integration**.
+2. Add `https://github.com/Roos-AID/hacs-janitza` with type **Integration**.
 3. Search for **Janitza**, download it, and restart Home Assistant.
 
 ### Manually
@@ -111,7 +111,7 @@ register the integration reads, undecoded, with the serial number left out.
 ## How this repository is built
 
 The register map lives in a separate device library,
-[janitza-modbus](https://github.com/OWNER/janitza-modbus), which has no
+[janitza-modbus](https://github.com/Roos-AID/janitza-modbus), which has no
 Home Assistant dependency. Until it is published on PyPI, a copy of it is
 vendored in `custom_components/janitza/janitza_modbus`, imported relatively,
 so the integration installs without any extra requirement. Do not edit that

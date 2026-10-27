@@ -17,7 +17,7 @@ Pull requests are the best way to propose changes to the codebase.
 2. If you've changed something, update the documentation.
 3. Make sure your code lints (using `scripts/lint`).
 4. Test your contribution (`python3 -m pytest`).
-5. Changes to the register map belong in [janitza-modbus](https://github.com/OWNER/janitza-modbus); bring them in with `scripts/vendor`, never by editing `custom_components/janitza/janitza_modbus`.
+5. Changes to the register map belong in [janitza-modbus](https://github.com/Roos-AID/janitza-modbus); bring them in with `scripts/vendor`, never by editing `custom_components/janitza/janitza_modbus`.
 6. Issue that pull request!
 
 ## Any contributions you make will be under the Apache License 2.0
@@ -49,7 +49,7 @@ Use [black](https://github.com/ambv/black) to make sure the code follows the sty
 
 ## Test your code modification
 
-This custom component is based on [janitza template](https://github.com/OWNER/hacs-janitza).
+This custom component is based on [janitza template](https://github.com/Roos-AID/hacs-janitza).
 
 It comes with development environment in a container, easy to launch
 if you use Visual Studio Code. With this container you will have a stand alone
