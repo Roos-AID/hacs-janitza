@@ -28,7 +28,7 @@ integration: it uses the Modbus libraries Home Assistant already ships.
 ### HACS
 
 1. In HACS, open the menu in the top right and choose **Custom repositories**.
-2. Add `https://github.com/Roos-AID/hacs-janitza` with type **Integration**.
+2. Add `https://github.com/Roos-AID/janitza-homeassistant` with type **Integration**.
 3. Search for **Janitza**, download it, and restart Home Assistant.
 
 ### Manually

@@ -1,5 +1,5 @@
 {
-    "name": "Roos-AID/hacs-janitza",
+    "name": "Roos-AID/janitza-homeassistant",
     "image": "mcr.microsoft.com/devcontainers/base:debian",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [
